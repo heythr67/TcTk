@@ -1,0 +1,30 @@
+How to run Kick Tic Tac Toe : 
+
+For you to get the first hand feeling of how Kick Tic Tac Toe works, We have simplified the whole 9 grids to 1 grid. So, first
+let's start with installing one grid. The setup looks like this in the video:
+
+https://youtu.be/ZbnusGToDA0
+
+In this video, we can see player hitting on one grid (black fabric on wall). Upon strike, the cat (the sprite from scratch) jumps 
+and there is corresponding report with green rectangular on blue background. They both together are indication that you have hit 
+the grid. In its simplicity, you require two files, which are:
+
+kttt-dr-2.py (https://github.com/heythr67/TcTk/blob/master/kttt-dr-2.py)
+mpu6050.py (https://github.com/heythr67/TcTk/blob/master/mpu6050.py) credit goes to MrTijn/Tijndagamer
+metronom60.wav (https://github.com/heythr67/TcTk/blob/master/metronom60.wav)
+
+A VNC viewer on machine ( you can do ssh too)
+A raspberry pi
+A mpu6050 sensor
+A speaker.
+
+Ok, So the steps are:
+
+        1- Install vncviewer from : https://www.realvnc.com/en/connect/download/viewer/
+        2- Connect VNCviewer with raspberry pi by getting the ip address
+           (The easy way is that you connect with hotspot from your mobile or the wifi network,Find the ip address of
+           raspberry pi using arp -a )
+        3- Please transfer the file to raspberry pi.
+        4- run the code as : 
+        
+                  python kttt-dr-2.py
