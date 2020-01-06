@@ -4,8 +4,18 @@ Made by: MrTijn/Tijndagamer
 Released under the MIT License
 Copyright (c) 2015, 2016, 2017 MrTijn/Tijndagamer
 """
-import statistics 
+import datetime as dt
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import math
+import statistics
 import smbus
+import time
+from tca9548a import I2C_SW
+fig= plt.figure()
+ax = fig.add_subplot(1,1,1)
+xs = []
+ys = []
 
 class mpu6050:
 
@@ -53,49 +63,42 @@ class mpu6050:
     ACCEL_CONFIG = 0x1C
     GYRO_CONFIG = 0x1B
 
-    CALIBERATION_DURATION= 500 
+    offset= {} 
+    CAL_D =  50
+    GX_TH = 50 
+    GY_TH = 50 
+    GZ_TH = 50  
+    ACC_TH =10
 
-    def __init__(self, address, offset,bus=1):
+    def __init__(self, address, bus=1):
         self.address = address
+        #self.bus_n = bus
+        self.bus = bus
+        print('bus number',' ',bus) 
+        #self.i2csw= I2C_SW(bus, 0x70, 1)
+        #self.i2csw.chn(self.bus_n-1)
+        #if self.bus_n == 8 : 
+            #self.i2csw2 = I2C_SW(bus,0x70,1)
+            #self.i2csw2.chn(0)
+            
         self.bus = smbus.SMBus(bus)
+        
         # Wake up the MPU-6050 since it starts in sleep mode
         self.bus.write_byte_data(self.address, self.PWR_MGMT_1, 0x00)
-        self.detect = 0  
-        self.offset = self.calculate_offset(self) 
 
-    def calculate_offset(self):
-        ax, ay, az = []
-        gx, gy, gz = []
-
-        for i in range ( 0,CALIBERATE_DURATION)
-               accel_data = self.get_accel_data() 
-               gyro_data = self.get_gyro_data()
-                
-               ax.append(accel_data['x'])
-               ay.append(accel_data['y'])
-               az.append(accel_data['z'])
-
-               gx.append(gyro_data['x'])
-               gy.append(gyro_data['y'])
-               gz.append(gyro_data['z'])
- 	       
-               time.sleep(0.2) 
-        return math.sqrt(statistics.mean(ax)*statistics.mean(ax)+statistics.mean(ay)*statistics.mean(ay)+statistics.mean(az)*statistics.mean(az)) statistics.mean(gx) statistics.mean(gy) statistics.mean(gz) 
-
-    def get_data(self): 
-         accel_data = self.t_accel_data() 
-         gyro_data = self.t_gyro_data()
-                  
-         if ((accel_data-self.offset(0) > ACC_OFFSET) || (gyro_data['x'] - self.offset(1) > GYRO_X ) || (gyro_data['y'] - self.offset(2) > GYRO_Y) || (gyro_data['z'] -self.offset(3) >  GYRO_Z)):
-              self.detect = 1
-		
     # I2C communication methods
+
     def read_i2c_word(self, register):
         """Read two i2c registers and combine them.
 
         register -- the first register to read from.
         Returns the combined read results.
         """
+        
+        #self.i2csw.chn(self.bus_n-1)
+        
+        #if self.bus_n == 8 :
+             #self.i2csw2.chn(0)
         # Read the data from the registers
         high = self.bus.read_byte_data(self.address, register)
         low = self.bus.read_byte_data(self.address, register + 1)
@@ -114,6 +117,9 @@ class mpu6050:
 
         Returns the temperature in degrees Celcius.
         """
+        #self.i2csw.chn(self.bus_n-1)
+        #if self.bus_n == 8 : 
+             #self.i2csw2.chn(0)  
         raw_temp = self.read_i2c_word(self.TEMP_OUT0)
 
         # Get the actual temperature using the formule given in the
@@ -129,6 +135,9 @@ class mpu6050:
         pre-defined range is advised.
         """
         # First change it to 0x00 to make sure we write the correct value later
+        #self.i2csw.chn(self.bus_n-1) 
+        #if self.bus_n == 8 : 
+                #self.i2csw2.chn(0)
         self.bus.write_byte_data(self.address, self.ACCEL_CONFIG, 0x00)
 
         # Write the new range to the ACCEL_CONFIG register
@@ -142,6 +151,9 @@ class mpu6050:
         If raw is False, it will return an integer: -1, 2, 4, 8 or 16. When it
         returns -1 something went wrong.
         """
+        #self.i2csw.chn(self.bus_n-1)
+        #if self.bus_n == 8 :
+             #self.i2csw2.chn(0)
         raw_data = self.bus.read_byte_data(self.address, self.ACCEL_CONFIG)
 
         if raw is True:
@@ -165,6 +177,9 @@ class mpu6050:
         If g is False, it will return the data in m/s^2
         Returns a dictionary with the measurement results.
         """
+        #self.i2csw.chn(self.bus_n-1)
+        #if self.bus_n == 8 :
+              #self.i2csw2.chn(0) 
         x = self.read_i2c_word(self.ACCEL_XOUT0)
         y = self.read_i2c_word(self.ACCEL_YOUT0)
         z = self.read_i2c_word(self.ACCEL_ZOUT0)
@@ -203,6 +218,9 @@ class mpu6050:
         range is advised.
         """
         # First change it to 0x00 to make sure we write the correct value later
+        #self.i2csw.chn(self.bus_n-1) 
+        #if self.bus_n == 8 :
+             #self.i2csw2.chn(0)
         self.bus.write_byte_data(self.address, self.GYRO_CONFIG, 0x00)
 
         # Write the new range to the ACCEL_CONFIG register
@@ -216,6 +234,9 @@ class mpu6050:
         If raw is False, it will return 250, 500, 1000, 2000 or -1. If the
         returned value is equal to -1 something went wrong.
         """
+        #self.i2csw.chn(self.bus_n-1)
+        #if self.bus_n == 8 :
+             #self.i2csw2.chn(0)
         raw_data = self.bus.read_byte_data(self.address, self.GYRO_CONFIG)
 
         if raw is True:
@@ -237,6 +258,9 @@ class mpu6050:
 
         Returns the read values in a dictionary.
         """
+        #self.i2csw.chn(self.bus_n-1)
+        #if self.bus_n == 8 :
+             #self.i2csw2.chn(0) 
         x = self.read_i2c_word(self.GYRO_XOUT0)
         y = self.read_i2c_word(self.GYRO_YOUT0)
         z = self.read_i2c_word(self.GYRO_ZOUT0)
@@ -270,14 +294,90 @@ class mpu6050:
 
         return [accel, gyro, temp]
 
-if __name__ == "__main__":
-    mpu = mpu6050(0x68)
-    print(mpu.get_temp())
-    accel_data = mpu.get_accel_data()
-    print(accel_data['x'])
-    print(accel_data['y'])
-    print(accel_data['z'])
-    gyro_data = mpu.get_gyro_data()
-    print(gyro_data['x'])
-    print(gyro_data['y'])
-    print(gyro_data['z'])
+    def calculate_offset(self,ac_th, gx_th , gy_th, gz_th):
+        ax = []
+        gx = []
+        ay = []
+        az = []
+        gy = []
+        gz = [] 
+        self.ACC_TH = ac_th 
+        self.GX_TH  = gx_th
+        self.GY_TH  = gy_th
+        self.GZ_TH  = gz_th 
+ 
+        for i in range(0,self.CAL_D):
+               accel_data = self.get_accel_data()
+               gyro_data = self.get_gyro_data()
+
+               ax.append(accel_data['x'])
+               ay.append(accel_data['y'])
+               az.append(accel_data['z'])
+
+               gx.append(gyro_data['x'])
+               gy.append(gyro_data['y'])
+               gz.append(gyro_data['z'])
+
+               time.sleep(0.2)
+        
+               #print("Calberating.... "+  str(self.bus_n))
+               
+               print("Calberating.... ")
+        return {'a':math.sqrt(statistics.mean(ax)*statistics.mean(ax)+statistics.mean(ay)*statistics.mean(ay)+statistics.mean(az)*statistics.mean(az)), 'gx':statistics.mean(gx), 'gy':statistics.mean(gy), 'gz':statistics.mean(gz)}
+
+
+    def detect(self):
+
+        accel_data= self.t_accel_data()
+        gyro_data = self.t_gyro_data() 
+        accel_dump_data = self.get_accel_data() 
+        
+        #print("DETECTING BUS ")  
+        #print("DETECTING BUS ",self.bus_n)  
+        #print("self.offset",self.offset)
+        #print("accel_data", accel_data)
+        #print("gyro_data", gyro_data) 
+        return_data = [] 
+        if((accel_data-self.offset['a'] > self.ACC_TH) | (abs(gyro_data['x']-self.offset['gx']) > self.GX_TH) | (abs(gyro_data['y'] - self.offset['gy']) > self.GY_TH) |(abs(gyro_data['z']-self.offset['gz']) > self.GZ_TH)): 
+               return_data = [1,accel_dump_data['x'],accel_dump_data['y'],accel_dump_data['z'],gyro_data['x'],gyro_data['y'],gyro_data['z']]
+               return return_data 
+        return [-1] 
+
+    def t_accel_data(self):
+        accel_data = self.get_accel_data()
+        x= math.sqrt(accel_data['x']*accel_data['x']+accel_data['y']*accel_data['y']+accel_data['z']*accel_data['z'])
+   
+        return x
+
+    def t_gyro_data(self):
+        return self.get_gyro_data()
+
+def animate(self):
+   global xs,ys 
+   global ax
+   x = t_gyro_data() 
+   #x= t_accel_data()
+   xs.append(dt.datetime.now())
+   ys.append(x['x'])
+
+   xs = xs[-20:]
+   ys = ys[-20:] 
+   ax.clear()
+   ax.plot(xs,ys)
+
+   plt.xticks(rotation=45,ha='right')
+   plt.subplots_adjust(bottom=0.30)
+   plt.title('time')
+   plt.ylabel('Acclerattor data')
+
+#if __name__ == "__main__":
+#    mpu = mpu6050(0x68,8)
+#    time.sleep(2)  
+#    print(mpu.get_temp())
+#    mpu.offset= mpu.calculate_offset(10,5,5,5)
+     
+#    while True :
+   	#ani=animation.FuncAnimation(fig,animate,interval=200)
+        #plt.show()
+        #if(mpu.detect()):
+        #  print ("detect ..... " + str(mpu.bus_n)) 
